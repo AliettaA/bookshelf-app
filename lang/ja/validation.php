@@ -146,7 +146,7 @@ return [
     'starts_with' => ':attributeは次のいずれかで始まるようにしてください：:values',
     'string' => ':attributeは文字列で入力してください。',
     'timezone' => ':attributeは有効なタイムゾーンを指定してください。',
-    'unique' => 'この:attributeは既に使用されています。',
+    'unique' => 'その:attributeは既に使用されています。',
     'uploaded' => ':attributeのアップロードに失敗しました。',
     'uppercase' => ':attributeは大文字で入力してください。',
     'url' => ':attributeは有効なURL形式で入力してください。',
