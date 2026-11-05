@@ -176,10 +176,10 @@ return [
     */
 
     'attributes' => [
-        'name' => '名前',
+        'name' => 'お名前',
         'email' => 'メールアドレス',
         'password' => 'パスワード',
-        'password_confirmation' => 'パスワード（確認用）',
+        'password_confirmation' => 'パスワード確認',
         'title' => 'タイトル',
         'author' => '著者',
         'isbn' => 'ISBN',
