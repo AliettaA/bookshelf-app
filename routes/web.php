@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [BookController::class, 'index']);
+
+// create を show より先に定義するため、認証必須のルートを先に登録する
+Route::resource('books', BookController::class)
+    ->except(['index', 'show'])
+    ->middleware('auth');
+Route::resource('books', BookController::class)
+    ->only(['index', 'show']);
