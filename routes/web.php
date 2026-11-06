@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\GenreController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,3 +23,6 @@ Route::resource('books', BookController::class)
     ->middleware('auth');
 Route::resource('books', BookController::class)
     ->only(['index', 'show']);
+
+Route::resource('genres', GenreController::class)
+    ->middleware('auth');
