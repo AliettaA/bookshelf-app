@@ -212,17 +212,21 @@ ISBN は**半角数字13桁のみ**受け付ける（全角数字・ハイフン
 
 ---
 
-## 11. 公開API（⚠️ 未確定：PMの回答待ち。実装は人間の指示があってから）
-
-設計案（変更の可能性あり）：
+## 11. 公開API（確定：PM回答 確認⑥）
 
 - `routes/api.php`、`Route::prefix('v1')` ＋ `apiResource('books', Api\V1\BookController::class)`、基本機能は認証なし
 - API Resource（BookResource）で整形し、`data` キーで包む
-- 項目：id, title, author, isbn, published_date, description, image_url, average_rating（小数第1位、レビューなしは null）, reviews_count, genres[{id, name}], user{id, name}（**email は含めない**）, created_at, updated_at。詳細は reviews[{id, rating, comment, user{id, name}, created_at}] も含める（新しい順）
-- 一覧：デフォルト20件、per_page 1〜100、新しい順、keyword はタイトル OR 著者の部分一致、genre_id で絞り込み（組み合わせ時に OR 条件で絞り込みが外れないよう where をグループ化）
-- ステータス：取得200・登録201・更新200・削除204（ボディなし）・存在しない404・バリデーション422
-- 404 は `{"message": "指定された書籍が見つかりません。"}`（`app/Exceptions/Handler.php` で変換）
+- 各書籍の項目：id, title, author, isbn, published_date, description, image_url, average_rating, reviews_count, genres[{id, name}], created_at, updated_at
+  - **登録者（user）はレスポンスに含めない**（確認⑥-1）
+  - average_rating は小数第1位まで、レビューがない書籍は null（確認⑥-A）
+- 詳細は上記に加えて reviews[{id, rating, comment, user_name, created_at}] を含める（新しい順）
+  - レビューの投稿者は**名前のみ**（user_name）。IDやメールアドレスは含めない
+- 一覧：デフォルト20件、per_page 1〜100（確認⑥-B）、新しい順（created_at 降順＋id 降順）
+- 検索：keyword はタイトル OR 著者の部分一致、genre_id でジャンルの絞り込み。組み合わせ時に OR 条件で絞り込みが外れないよう、keyword の条件は where をグループ化する
+- ステータス：取得200・登録201・更新200・削除204（ボディなし）・バリデーション422
+- 存在しない書籍は 404 と `{"message": "書籍が見つかりませんでした。"}`（確認⑥-C。`app/Exceptions/Handler.php` で変換）
 - `Accept: application/json` がなくても JSON で返すミドルウェアを api グループに追加
+- 登録・更新は、リクエストで user_id を受け取り存在チェックする（確認④-11）。登録・更新後は BookResource で書籍を返す
 - 更新は PUT の全体更新（全必須項目が必要）
 
 ## 12. テスト（⚠️ 方針はPMの回答待ち）
@@ -235,10 +239,10 @@ ISBN は**半角数字13桁のみ**受け付ける（全角数字・ハイフン
 - 「新しい順」のテストは created_at を明示的にずらして作る
 - カバレッジ計測には `.env` に `SAIL_XDEBUG_MODE=develop,debug,coverage` を設定して `sail up -d` し直す。目標は基本機能で 60% 超
 
-## 13. 仮決定（自分の判断で決めたもの。変更の可能性あり）
+## 13. 並び順（確定：自身の設計判断。PM了承済み 確認⑦）
 
-- ランキングで平均評価が同じ場合：レビュー件数の多い順
-- お気に入り一覧：お気に入りに追加した日時の新しい順（`favorites.created_at`）
+- ランキングで平均評価が同じ場合：レビュー件数の多い順、それも同じ場合は id の降順（新しく登録された順）
+- お気に入り一覧：お気に入りに追加した日時の新しい順（favorites.created_at 降順＋favorites.id 降順）
 - 書籍詳細のレビュー一覧：投稿日時の新しい順
 - ジャンル一覧：登録順（id 順）
 - ジャンル詳細の書籍：新しい順
