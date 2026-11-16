@@ -92,7 +92,7 @@ class RankingTest extends TestCase
      */
     public function test_k5_shows_message_when_no_reviewed_books(): void
     {
-        // レビューのない書籍があっても、メッセージが表示される
+        // 書籍はあるが、レビューのある書籍が1冊もない場合にメッセージが表示される
         Book::factory()->create();
 
         $this->get(route('ranking.index'))
