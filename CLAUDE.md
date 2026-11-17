@@ -18,7 +18,9 @@
 - 命名は PSR-12 / Laravel 規約（変数・メソッド camelCase、クラス PascalCase、テーブル snake_case 複数形、カラム snake_case 単数形）。ローマ字や無意味な名前（a, x 等）は使わない
 - コミット前に `sail bin pint` を実行する。採点基準は `sail bin pint --test` が「No fixable issues were found」
 - 応用機能に着手済み。これから書く・変更するコードには、引数と戻り値の型宣言（リレーションは HasMany 等の具体的な型）と、日本語の PHPDoc（処理内容・引数・戻り値）を必ず付ける
-- 既存コードへの PHPDoc の追加は、まとめて別のコミットで行う
+- 既存コードへの日本語の PHPDoc は追加済み（feature/phpdoc）
+- DB::transaction()：複数の SQL を1単位で扱う処理で使う。書籍の登録・更新（Web・API）、書籍・レビューの削除、日次バッチ（失効＋通知）は必ず囲む
+- Collection メソッド：foreach などの手続き的なループは使わず、map・filter・groupBy・each などで書く。Seeder とマイ読書レポートも対象
 
 ## 2. 環境
 
