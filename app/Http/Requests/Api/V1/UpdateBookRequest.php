@@ -10,7 +10,11 @@ use App\Http\Requests\UpdateBookRequest as WebUpdateBookRequest;
 class UpdateBookRequest extends WebUpdateBookRequest
 {
     /**
-     * @return array<string, array<int, mixed>>
+     * バリデーションルールを返す。
+     *
+     * Web 版の UpdateBookRequest のルールに、登録者ID（user_id：必須の整数で users テーブルに存在する id）を加える。
+     *
+     * @return array<string, array<int, mixed>> 項目名をキー、ルールの配列を値にした連想配列
      */
     public function rules(): array
     {
@@ -21,7 +25,11 @@ class UpdateBookRequest extends WebUpdateBookRequest
     }
 
     /**
-     * @return array<string, string>
+     * バリデーションエラー時の日本語メッセージを返す。
+     *
+     * Web 版の UpdateBookRequest のメッセージに、user_id のメッセージを加える。
+     *
+     * @return array<string, string> エラーメッセージの連想配列
      */
     public function messages(): array
     {

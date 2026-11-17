@@ -4,15 +4,31 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * 書籍登録のリクエスト（Web 画面）。入力内容のバリデーションを行う。
+ */
 class StoreBookRequest extends FormRequest
 {
+    /**
+     * このリクエストを実行してよいかを判定する。
+     *
+     * 認可の判定はここでは行わず、常に許可する（ログイン必須は auth ミドルウェアで制御する）。
+     *
+     * @return bool 常に true
+     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * バリデーションルールを返す。
+     *
+     * title・author は必須で255文字以内、isbn は必須で半角数字13桁かつ重複不可、published_date は必須の日付、
+     * description は任意の文字列（文字数の上限なし）、image_url は任意の URL 形式で255文字以内、
+     * genres は1つ以上必須の配列で、各要素は整数・重複なし・genres テーブルに存在する id。
+     *
+     * @return array<string, array<int, string>> 項目名をキー、ルールの配列を値にした連想配列
      */
     public function rules(): array
     {
@@ -29,7 +45,11 @@ class StoreBookRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * バリデーションエラー時の日本語メッセージを返す。
+     *
+     * 「項目名.ルール名」をキー、メッセージを値にした連想配列。
+     *
+     * @return array<string, string> エラーメッセージの連想配列
      */
     public function messages(): array
     {
