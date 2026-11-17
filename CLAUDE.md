@@ -17,7 +17,8 @@
 - 設定値（DB接続・APIキー等）は `.env` で管理し、ハードコーディングしない
 - 命名は PSR-12 / Laravel 規約（変数・メソッド camelCase、クラス PascalCase、テーブル snake_case 複数形、カラム snake_case 単数形）。ローマ字や無意味な名前（a, x 等）は使わない
 - コミット前に `sail bin pint` を実行する。採点基準は `sail bin pint --test` が「No fixable issues were found」
-- 応用機能（★）の要件（型宣言の徹底、PHPDoc、Sanctum、読書計画など）は、基本機能の完成後に着手する。今は実装しない
+- 応用機能に着手済み。これから書く・変更するコードには、引数と戻り値の型宣言（リレーションは HasMany 等の具体的な型）と、日本語の PHPDoc（処理内容・引数・戻り値）を必ず付ける
+- 既存コードへの PHPDoc の追加は、まとめて別のコミットで行う
 
 ## 2. 環境
 
