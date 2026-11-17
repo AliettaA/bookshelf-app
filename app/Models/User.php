@@ -10,12 +10,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * ユーザーモデル（users テーブル）。
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * 一括代入を許可する属性。
      *
      * @var array<int, string>
      */
@@ -26,7 +29,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * 配列・JSON に変換するときに隠す属性。
      *
      * @var array<int, string>
      */
@@ -36,7 +39,9 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * 属性のキャスト設定。
+     *
+     * email_verified_at は日時型、password は保存時に自動でハッシュ化する。
      *
      * @var array<string, string>
      */
@@ -45,21 +50,45 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    /**
+     * このユーザーが登録した書籍。
+     *
+     * @return HasMany<Book>
+     */
     public function books(): HasMany
     {
         return $this->hasMany(Book::class);
     }
 
+    /**
+     * このユーザーが投稿したレビュー。
+     *
+     * @return HasMany<Review>
+     */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * このユーザーがお気に入りに追加した書籍（中間テーブル favorites）。
+     *
+     * 中間テーブルの created_at・updated_at も記録する。
+     *
+     * @return BelongsToMany<Book>
+     */
     public function favoriteBooks(): BelongsToMany
     {
         return $this->belongsToMany(Book::class, 'favorites')->withTimestamps();
     }
 
+    /**
+     * このユーザーがいいねしたレビュー（中間テーブル review_likes）。
+     *
+     * 中間テーブルの created_at・updated_at も記録する。
+     *
+     * @return BelongsToMany<Review>
+     */
     public function likedReviews(): BelongsToMany
     {
         return $this->belongsToMany(Review::class, 'review_likes')->withTimestamps();
