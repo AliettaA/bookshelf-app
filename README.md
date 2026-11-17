@@ -205,11 +205,48 @@ curl http://localhost/api/v1/books/1
 
 ### テスト
 
+#### 実行方法
+
 ```bash
 ./vendor/bin/sail artisan test
 ```
 
-（テストの実装後に、内容を追記します）
+#### テストの構成
+
+| 種類 | ディレクトリ | 内容 |
+|---|---|---|
+| 単体テスト | `tests/Unit/Models` | モデルのリレーション |
+| 機能テスト | `tests/Feature` | 画面アクセス・書籍・レビュー・ジャンル・お気に入り・いいね・ランキング・認証 |
+| 機能テスト（API） | `tests/Feature/Api` | 公開 API |
+
+- テストは `RefreshDatabase` と Factory で必要なデータを作成します（Seeder には依存しません）。
+- 開発用 DB ではなく、テスト用 DB（`testing`）を使います。
+
+#### 結果
+
+148 件すべて成功しています。
+
+PHP 8.5 では `config/database.php` の `PDO::MYSQL_ATTR_SSL_CA` が非推奨のため、2 件に `deprecated` と表示されます。テスト自体は成功しています。
+
+#### カバレッジの計測
+
+1. `.env` に次の行を追加します。
+
+   ```
+   SAIL_XDEBUG_MODE=develop,debug,coverage
+   ```
+
+2. コンテナを再起動し、計測します。
+
+   ```bash
+   ./vendor/bin/sail down
+   ./vendor/bin/sail up -d
+   ./vendor/bin/sail artisan test --coverage
+   ```
+
+3. 計測後は `.env` の該当行を削除（またはコメントアウト）し、`sail down` → `sail up -d` で元に戻します。
+
+カバレッジは 98.3% です。100% でないのは、`TrustHosts`・`BroadcastServiceProvider` など、Laravel 標準で使用していないファイルのみです。
 
 ## 作成者
 
