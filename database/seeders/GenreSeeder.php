@@ -8,11 +8,13 @@ use Illuminate\Database\Seeder;
 class GenreSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * 10種類のジャンルを登録する。
+     *
+     * 同名のジャンルがある場合は作成しない。
      */
     public function run(): void
     {
-        $genreNames = [
+        collect([
             '小説',
             'ビジネス',
             '技術書',
@@ -23,10 +25,6 @@ class GenreSeeder extends Seeder
             '芸術',
             '料理',
             '旅行',
-        ];
-
-        foreach ($genreNames as $genreName) {
-            Genre::firstOrCreate(['name' => $genreName]);
-        }
+        ])->each(fn (string $genreName) => Genre::firstOrCreate(['name' => $genreName]));
     }
 }

@@ -64,4 +64,14 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Review::class, 'review_likes')->withTimestamps();
     }
+
+    /**
+     * このユーザーが立てた読書計画。
+     *
+     * @return HasMany<ReadingPlan>
+     */
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(ReadingPlan::class);
+    }
 }
