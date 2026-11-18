@@ -45,15 +45,17 @@
 
 | テーブル | カラム | 補足 |
 |---|---|---|
-| users | id, name(255), email(255, UNIQUE), email_verified_at(null), password, two_factor_*（Fortifyが追加）, remember_token, timestamps | |
-| books | id, user_id(FK users, cascadeOnDelete), title(255), author(255), isbn(varchar 13, UNIQUE), published_date(date, NOT NULL), description(text, null), image_url(255, null), timestamps | |
+| users | id, name(255), email(255, UNIQUE), email_verified_at(null), password, remember_token, timestamps | |
+| books | id, user_id(FK users, cascadeOnDelete), title(255), author(255), isbn(varchar 13, null, UNIQUE), published_date(date, null), description(text, null), image_url(255, null), timestamps | |
 | genres | id, name(255, UNIQUE), timestamps | |
 | book_genre | id, book_id(FK books, cascadeOnDelete), genre_id(FK genres, restrictOnDelete), timestamps | UNIQUE(book_id, genre_id) |
 | reviews | id, user_id(FK users, cascadeOnDelete), book_id(FK books, cascadeOnDelete), rating(tinyint unsigned), comment(text, NOT NULL), timestamps | **複合UNIQUEなし**（同じ書籍に同じユーザーが複数レビュー可） |
 | favorites | id, user_id(FK users, cascadeOnDelete), book_id(FK books, cascadeOnDelete), timestamps | UNIQUE(user_id, book_id) |
 | review_likes | id, user_id(FK users, cascadeOnDelete), review_id(FK reviews, cascadeOnDelete), timestamps | UNIQUE(user_id, review_id) |
+| reading_plans | id, user_id(FK users, cascadeOnDelete), book_id(FK books, cascadeOnDelete), target_date(date), status(string, デフォルト `in_progress`), completed_at(datetime, null), timestamps | status は `ReadingPlanStatus`（Enum）で扱う |
+| notifications | `sail artisan notifications:table` が作る Laravel 標準の構造（id(uuid), type, notifiable_type・notifiable_id, data(text), read_at(null), timestamps） | |
 
-- `books.published_date` は**日付型キャストをしない**（Blade が `Y-m-d` の文字列のまま `{{ }}` と `type="date"` の value に出力しているため。キャストすると時刻付きになり編集フォームが空欄になる）
+- `books.published_date` は **date キャストにする**（応用版では Blade が `->format('Y-m-d')` で日付として扱うため）
 - 書籍削除時は、レビュー（とそのいいね）・お気に入り・ジャンル紐付けも削除される（外部キーの cascadeOnDelete で実現）
 - 中間テーブルは `withTimestamps()` を付ける
 
@@ -61,21 +63,34 @@
 
 | モデル | メソッド |
 |---|---|
-| User | `books()` hasMany、`reviews()` hasMany、`favoriteBooks()` belongsToMany(Book, 'favorites')、`likedReviews()` belongsToMany(Review, 'review_likes') |
-| Book | `user()` belongsTo、`genres()` belongsToMany(Genre, 'book_genre')、`reviews()` hasMany |
+| User | `books()` hasMany、`reviews()` hasMany、`favoriteBooks()` belongsToMany(Book, 'favorites')、`likedReviews()` belongsToMany(Review, 'review_likes')、`readingPlans()` hasMany |
+| Book | `user()` belongsTo、`genres()` belongsToMany(Genre, 'book_genre')、`reviews()` hasMany、`readingPlans()` hasMany |
 | Genre | `books()` belongsToMany(Book, 'book_genre') |
 | Review | `user()` belongsTo、`book()` belongsTo、`likedByUsers()` belongsToMany(User, 'review_likes') |
+| ReadingPlan | `user()` belongsTo、`book()` belongsTo |
 
 ### Seeder（シーディング要件どおり。DatabaseSeeder の実行順もこの順）
 
 1. **UserSeeder**：山田太郎 yamada@example.com / 鈴木花子 suzuki@example.com / 田中一郎 tanaka@example.com / 佐藤美咲 sato@example.com / 高橋健太 takahashi@example.com（パスワードはすべて `password`、`Hash::make()`、`firstOrCreate` で email 重複防止）
 2. **GenreSeeder**：小説、ビジネス、技術書、自己啓発、エッセイ、歴史、科学、芸術、料理、旅行（`firstOrCreate`）
-3. **BookSeeder**：案件シートの11冊。登録者は `User::first()`。description を設定、image_url は `https://placehold.co/200x300/e2e8f0/475569?text={番号}`（1〜11）。`firstOrCreate`（ISBN）＋ `genres()->sync()`
-4. **ReviewSeeder**：32件。5人が11冊に、rating 3〜5、各書籍2〜4件、具体的なコメント。`create`
+3. **BookSeeder**：案件シートの11冊。登録者は書籍ごとにランダム（`$users->random()->id`。マイ読書レポートで複数ユーザーの所有書籍を表示するため）。description を設定、image_url は `https://placehold.co/200x300/e2e8f0/475569?text={番号}`（1〜11）。`firstOrCreate`（ISBN）＋ `genres()->sync()`
+4. **ReviewSeeder**：各書籍に2〜4件（`rand(2, 4)`）、投稿者は `$users->random($reviewCount)` でランダム（重複なし）。rating は1〜5の全範囲でランダム、コメントは評価別の日本語テンプレート（5段階）からランダム。`create`
 5. **FavoriteSeeder**：各ユーザー3〜5冊。`syncWithoutDetaching`
-6. **ReviewLikeSeeder**：各レビューに0〜3人（自分のレビューを除く）。`syncWithoutDetaching`
+6. **ReviewLikeSeeder**：各レビューに0〜3人をランダムに選ぶ（自分のレビューを除く）。レビュー件数がランダムなので固定の配列は使わない。`syncWithoutDetaching`
+7. **ReadingPlanSeeder**：6件。`create`。`target_date` は `Carbon::today()` 起点で動的に決め、実行日に関わらず同じ挙動にする。book_id は計画ごとに異なる書籍
+   - 山田太郎（ID 1〜5）：①3日後・進行中（3日前リマインダー対象）②当日・進行中（当日リマインダー対象）③3日前・進行中（バッチで期限切れ化＋3日後の再エンゲージメント対象）④7日後・進行中（リマインダー対象外）⑤10日前・読了、`completed_at` は5日前
+   - 鈴木花子（ID 6）：5日後・進行中（山田太郎でログインして `/reading-plans/6/edit` を直打ちし、403 になることを確認する用）
+
+すべての Seeder は `foreach` を使わず Collection メソッドで書く（§1）。
 
 （書籍データ・ISBN・出版日・ジャンルの詳細は案件シート⑨シーディング要件を参照）
+
+### Enum
+
+- `app/Enums/ReadingPlanStatus.php`（string backed enum）：`InProgress = 'in_progress'`（進行中）、`Completed = 'completed'`（読了）、`Expired = 'expired'`（期限切れ）
+- `label()`：画面表示用の日本語ラベル（進行中／読了／期限切れ）
+- `badgeClass()`：状態バッジ用の Tailwind クラス。`tailwind.config.js` は `app/` を走査しないため、Blade で既に使われているクラスだけで組む
+- `ReadingPlan` の `status` にキャストして使う（`target_date` は date、`completed_at` は datetime）
 
 ---
 

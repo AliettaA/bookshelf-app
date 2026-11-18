@@ -13,9 +13,7 @@ class Book extends Model
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * published_date は Blade が Y-m-d の文字列のまま出力するため、日付キャストはしない。
+     * 一括代入を許可する属性。
      *
      * @var array<int, string>
      */
@@ -27,6 +25,17 @@ class Book extends Model
         'published_date',
         'description',
         'image_url',
+    ];
+
+    /**
+     * 属性のキャスト設定。
+     *
+     * published_date は Carbon（日付型）として扱う。未登録（null）の場合は null のまま。
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'published_date' => 'date',
     ];
 
     public function user(): BelongsTo
@@ -42,5 +51,15 @@ class Book extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * この書籍を対象にした読書計画。
+     *
+     * @return HasMany<ReadingPlan>
+     */
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(ReadingPlan::class);
     }
 }

@@ -10,14 +10,17 @@ use Illuminate\Database\Seeder;
 class BookSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * 11冊の書籍を登録し、ジャンルを紐付ける。
+     *
+     * 登録者は書籍ごとに全ユーザーからランダムに割り当てる。
+     * 同じ ISBN の書籍がある場合は作成しない（ジャンルの紐付けは毎回 sync する）。
      */
     public function run(): void
     {
-        $user = User::first();
+        $users = User::all();
         $genreIdsByName = Genre::pluck('id', 'name');
 
-        $books = [
+        collect([
             [
                 'title' => '吾輩は猫である',
                 'author' => '夏目漱石',
@@ -106,13 +109,11 @@ class BookSeeder extends Seeder
                 'description' => '一つの金属製の箱「コンテナ」が、海運や港湾、そして世界経済のあり方をどのように変えたのかを描いた、物流の歴史を知るためのノンフィクション。',
                 'genres' => ['ビジネス', '歴史'],
             ],
-        ];
-
-        foreach ($books as $index => $bookData) {
+        ])->each(function (array $bookData, int $index) use ($users, $genreIdsByName) {
             $book = Book::firstOrCreate(
                 ['isbn' => $bookData['isbn']],
                 [
-                    'user_id' => $user->id,
+                    'user_id' => $users->random()->id,
                     'title' => $bookData['title'],
                     'author' => $bookData['author'],
                     'published_date' => $bookData['published_date'],
@@ -122,6 +123,6 @@ class BookSeeder extends Seeder
             );
 
             $book->genres()->sync($genreIdsByName->only($bookData['genres'])->values());
-        }
+        });
     }
 }
