@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookIsbnController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\NotificationController;
@@ -23,6 +24,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [BookController::class, 'index']);
+
+// ISBN 検索。/books/{book}/edit などと取り違えないよう、books の resource より前に定義する
+Route::get('/books/isbn/{isbn}', BookIsbnController::class)
+    ->middleware('auth')
+    ->name('books.isbn');
 
 // create を show より先に定義するため、認証必須のルートを先に登録する
 Route::resource('books', BookController::class)
