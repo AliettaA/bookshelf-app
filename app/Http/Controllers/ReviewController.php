@@ -6,8 +6,10 @@ use App\Http\Requests\StoreReviewRequest;
 use App\Http\Requests\UpdateReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
@@ -43,11 +45,22 @@ class ReviewController extends Controller
             ->with('success', 'レビューを更新しました。');
     }
 
+    /**
+     * レビューを削除して、対象書籍の詳細へ移動する。
+     *
+     * レビューへのいいねは外部キーの cascadeOnDelete で一緒に消える。
+     * 削除は1つのトランザクションで行う。
+     *
+     * @param  Review  $review  削除するレビュー
+     * @return RedirectResponse 書籍詳細へのリダイレクト（success：レビューを削除しました。）
+     *
+     * @throws AuthorizationException 投稿者本人でない場合（403）
+     */
     public function destroy(Review $review): RedirectResponse
     {
         $this->authorize('delete', $review);
 
-        $review->delete();
+        DB::transaction(fn () => $review->delete());
 
         return redirect()
             ->route('books.show', $review->book_id)

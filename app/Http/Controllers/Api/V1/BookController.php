@@ -11,6 +11,7 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
@@ -50,27 +51,56 @@ class BookController extends Controller
         return new BookResource($this->loadDetail($book));
     }
 
+    /**
+     * 書籍を登録し、ジャンルを紐付けて、登録した書籍を返す。
+     *
+     * 書籍の作成とジャンルの紐付けは1つのトランザクションで行う。
+     *
+     * @param  StoreBookRequest  $request  検証済みの登録リクエスト（user_id を含む）
+     * @return JsonResponse 登録した書籍（BookResource）。ステータスは 201
+     */
     public function store(StoreBookRequest $request): JsonResponse
     {
-        $book = Book::create($request->safe()->except('genres'));
-        $book->genres()->sync($request->validated('genres'));
+        $book = DB::transaction(function () use ($request) {
+            $book = Book::create($request->safe()->except('genres'));
+            $book->genres()->sync($request->validated('genres'));
+
+            return $book;
+        });
 
         return (new BookResource($this->loadDetail($book)))
             ->response()
             ->setStatusCode(201);
     }
 
+    /**
+     * 書籍を全体更新し、ジャンルの紐付けを入れ替えて、更新後の書籍を返す。
+     *
+     * 書籍の更新とジャンルの紐付けは1つのトランザクションで行う。
+     *
+     * @param  UpdateBookRequest  $request  検証済みの更新リクエスト（user_id を含む）
+     * @param  Book  $book  更新する書籍
+     * @return BookResource 更新後の書籍
+     */
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
-        $book->update($request->safe()->except('genres'));
-        $book->genres()->sync($request->validated('genres'));
+        DB::transaction(function () use ($request, $book) {
+            $book->update($request->safe()->except('genres'));
+            $book->genres()->sync($request->validated('genres'));
+        });
 
         return new BookResource($this->loadDetail($book));
     }
 
+    /**
+     * 書籍を削除する。削除は1つのトランザクションで行う。
+     *
+     * @param  Book  $book  削除する書籍
+     * @return Response ボディなしの 204
+     */
     public function destroy(Book $book): Response
     {
-        $book->delete();
+        DB::transaction(fn () => $book->delete());
 
         return response()->noContent();
     }
