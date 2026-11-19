@@ -89,7 +89,7 @@
 
 - `app/Enums/ReadingPlanStatus.php`（string backed enum）：`InProgress = 'in_progress'`（進行中）、`Completed = 'completed'`（読了）、`Expired = 'expired'`（期限切れ）
 - `label()`：画面表示用の日本語ラベル（進行中／読了／期限切れ）
-- `badgeClass()`：状態バッジ用の Tailwind クラス。`tailwind.config.js` は `app/` を走査しないため、Blade で既に使われているクラスだけで組む
+- `badgeClass()`：状態バッジ用の Tailwind クラス。`tailwind.config.js` の `content` に `./app/Enums/**/*.php` を入れてあり、Enum に書いたクラスも CSS に含まれる（クラス名は完全な文字列で書く。`'bg-'.$color` のような組み立ては検出されない）
 - `ReadingPlan` の `status` にキャストして使う（`target_date` は date、`completed_at` は datetime）
 
 ---
