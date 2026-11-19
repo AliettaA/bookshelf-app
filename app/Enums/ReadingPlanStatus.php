@@ -16,13 +16,13 @@ enum ReadingPlanStatus: string
     /**
      * 画面に表示する日本語のラベルを返す。
      *
-     * @return string 進行中／読了／期限切れ
+     * @return string 進行中／完了／期限切れ
      */
     public function label(): string
     {
         return match ($this) {
             self::InProgress => '進行中',
-            self::Completed => '読了',
+            self::Completed => '完了',
             self::Expired => '期限切れ',
         };
     }
