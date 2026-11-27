@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * 読書計画（ユーザーが書籍ごとに立てる、読み終える期日の計画）。
@@ -94,5 +97,33 @@ class ReadingPlan extends Model
         $this->status = ReadingPlanStatus::Completed;
         $this->completed_at = now();
         $this->save();
+    }
+
+    /**
+     * 計画を、この計画の通知と一緒に削除する。
+     */
+    public function deleteWithNotifications(): void
+    {
+        DB::transaction(function (): void {
+            self::deleteNotificationsFor(collect([$this->id]));
+
+            $this->delete();
+        });
+    }
+
+    /**
+     * 指定した読書計画の通知を削除する。
+     *
+     * 通知は外部キーで紐付いていないため、data の reading_plan_id が一致するものを削除する。
+     * 読書計画や書籍の削除と一緒に使うので、呼び出し側で DB::transaction() の中に入れる。
+     * 書籍の削除では計画が外部キーで一緒に消えるため、書籍を削除する前に計画の ID を取り出して渡す。
+     *
+     * @param  Collection<int, int>  $readingPlanIds  読書計画の ID（空の場合は何も削除しない）
+     */
+    public static function deleteNotificationsFor(Collection $readingPlanIds): void
+    {
+        DatabaseNotification::query()
+            ->whereIn('data->reading_plan_id', $readingPlanIds->all())
+            ->delete();
     }
 }

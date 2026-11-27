@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\StoreBookRequest;
 use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
+use App\Models\ReadingPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -93,14 +94,20 @@ class BookController extends Controller
     }
 
     /**
-     * 書籍を削除する。削除は1つのトランザクションで行う。
+     * 書籍を削除する。
+     *
+     * 読書計画は外部キーの cascadeOnDelete で一緒に消えるが、その通知は消えないため、
+     * 書籍を削除する前に計画の ID を取り出して削除する。通知と書籍の削除は1つのトランザクションで行う。
      *
      * @param  Book  $book  削除する書籍
      * @return Response ボディなしの 204
      */
     public function destroy(Book $book): Response
     {
-        DB::transaction(fn () => $book->delete());
+        DB::transaction(function () use ($book): void {
+            ReadingPlan::deleteNotificationsFor($book->readingPlans()->pluck('id'));
+            $book->delete();
+        });
 
         return response()->noContent();
     }

@@ -17,7 +17,8 @@ use Illuminate\Http\Request;
  * 読書計画を扱うコントローラー。
  *
  * 操作後はすべて一覧（reading-plans.index）へ戻る。
- * 各処理は1回の INSERT / UPDATE / DELETE で完結するため、DB::transaction() は使っていない。
+ * 作成・更新・読了は1回の INSERT / UPDATE で完結するため、DB::transaction() は使っていない。
+ * 削除は通知も一緒に削除するため、ReadingPlan::deleteWithNotifications() の中で使っている。
  */
 class ReadingPlanController extends Controller
 {
@@ -116,7 +117,7 @@ class ReadingPlanController extends Controller
     }
 
     /**
-     * 読書計画を削除する（状態に関わらず、本人なら削除できる）。
+     * 読書計画と、その計画の通知を削除する（状態に関わらず、本人なら削除できる）。
      *
      * @param  ReadingPlan  $readingPlan  削除する読書計画
      * @return RedirectResponse 一覧へのリダイレクト（success：読書計画を削除しました。）
@@ -127,7 +128,7 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('delete', $readingPlan);
 
-        $readingPlan->delete();
+        $readingPlan->deleteWithNotifications();
 
         return redirect()
             ->route('reading-plans.index')
