@@ -6,6 +6,7 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\ReadingPlan;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -170,8 +171,9 @@ class BookController extends Controller
     /**
      * 書籍を削除して、書籍一覧へ移動する。
      *
-     * レビュー・お気に入り・ジャンル紐付けなどは外部キーの cascadeOnDelete で一緒に消える。
-     * 削除は1つのトランザクションで行う。
+     * レビュー・お気に入り・ジャンル紐付け・読書計画などは外部キーの cascadeOnDelete で一緒に消える。
+     * 読書計画の通知は外部キーで消えないため、書籍を削除する前に計画の ID を取り出して削除する。
+     * 通知と書籍の削除は1つのトランザクションで行う。
      *
      * @param  Book  $book  削除する書籍
      * @return RedirectResponse 書籍一覧へのリダイレクト（success：書籍を削除しました。）
@@ -182,7 +184,10 @@ class BookController extends Controller
     {
         $this->authorize('delete', $book);
 
-        DB::transaction(fn () => $book->delete());
+        DB::transaction(function () use ($book): void {
+            ReadingPlan::deleteNotificationsFor($book->readingPlans()->pluck('id'));
+            $book->delete();
+        });
 
         return redirect()
             ->route('books.index')
